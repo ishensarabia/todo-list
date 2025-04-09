@@ -1,0 +1,25 @@
+class Project {
+    constructor(name) {
+        this.name = name;
+        this.guid = this.generateUniqueId();
+        this.tasks = [];
+    }
+
+    addTask(task) {
+        this.tasks.push(task);
+    }
+
+    removeTask(taskName) {
+        this.tasks = this.tasks.filter(task => task.name !== taskName);
+    }
+
+    getTasks() {
+        return this.tasks;
+    }
+
+    generateUniqueId() {
+        return '_' + Math.random().toString(36).substring(2, 9);
+    }
+}
+
+export default Project;
