@@ -1,6 +1,7 @@
 class Project {
-    constructor(name) {
+    constructor(name, description, ) {
         this.name = name;
+        this.description = description;
         this.guid = this.generateUniqueId();
         this.tasks = [];
     }

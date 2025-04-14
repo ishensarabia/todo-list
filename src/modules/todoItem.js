@@ -1,6 +1,5 @@
 class TodoItem {
-    constructor(id, title, description, isCompleted = false, deadline, category) {
-        this.id = id;
+    constructor(title, description, isCompleted = false, deadline, category) {
         this.title = title;
         this.description = description;
         this.isCompleted = isCompleted;
