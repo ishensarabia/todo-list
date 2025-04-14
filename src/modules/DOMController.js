@@ -1,3 +1,5 @@
+import { de } from "date-fns/locale";
+
 class DOMController {
   constructor(projectManager) {
     this.projectManager = projectManager;
@@ -21,8 +23,6 @@ class DOMController {
         this.projectManager.addProject(projectName, projectDescription);
         this.renderProjects();
       }
-
-
     });
   }
 
@@ -33,10 +33,8 @@ class DOMController {
         const projectName = prompt("Enter project name for the todo:");
         const todoDescription = prompt("Enter todo description:");
         if (projectName) {
-          this.projectManager.addToDo(projectName, todoDescription);
-          this.renderTodos(
-            this.projectManager.currentProject.guid
-          );
+          this.projectManager.addTask(projectName, todoDescription);
+          this.renderTodos(this.projectManager.currentProject.guid);
         }
       });
     }
@@ -93,9 +91,43 @@ class DOMController {
     }
 
     todos.forEach((todo) => {
-      console.log(todo);
       const todoItem = document.createElement("li");
+      todoItem.classList.add("todo-item"); // Add a class for styling
       todoItem.textContent = `${todo.title}: ${todo.description}`;
+
+      // Create Edit Button
+      const editButton = document.createElement("button");
+      editButton.textContent = "Edit";
+      editButton.classList.add("edit-button");
+
+      editButton.addEventListener("click", () => {
+        const newTitle = prompt("Edit todo title:", todo.title);
+        const newDescription = prompt(
+          "Edit todo description:",
+          todo.description
+        );
+        if (newTitle && newDescription) {
+          todo.title = newTitle;
+          todo.description = newDescription;
+          this.projectManager.updateTask(todo); // Add an updateTask method in ProjectManager
+          this.renderTodos(this.projectManager.currentProject.guid);
+        }
+      });
+
+      // Create Delete Button
+      const deleteButton = document.createElement("button");
+      deleteButton.textContent = "Delete";
+      deleteButton.classList.add("delete-button");
+
+      deleteButton.addEventListener("click", () => {
+        console.log("Deleting todo:", todo.title); // Debugging line
+        this.projectManager.removeTask(todo.title);
+        this.renderTodos(this.projectManager.currentProject.guid);
+      });
+
+      // Append buttons to the todo item
+      todoItem.appendChild(editButton);
+      todoItem.appendChild(deleteButton);
       todoList.appendChild(todoItem);
     });
   }
@@ -105,8 +137,6 @@ class DOMController {
     currentProjectlabel.textContent = `${this.projectManager.currentProject.name}`;
     this.renderTodos(this.projectManager.currentProject.guid);
   }
-  
-  
 }
 
 export default DOMController;

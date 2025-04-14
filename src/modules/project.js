@@ -11,7 +11,7 @@ class Project {
     }
 
     removeTask(taskName) {
-        this.tasks = this.tasks.filter(task => task.name !== taskName);
+        this.tasks = this.tasks.filter(task => task.title !== taskName);
     }
 
     getTasks() {

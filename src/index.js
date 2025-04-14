@@ -1,25 +1,40 @@
 import LocalStorageManager from "./modules/localStorage.js";
 import ProjectManager from "./modules/projectManager.js";
 import DOMController from "./modules/DOMController.js";
-import ToDoItem from "../src/modules/todoItem.js";
+import Project from "./modules/project.js";
+import TodoItem from "./modules/todoItem.js";
 import getDayOfYear from "../node_modules/date-fns/getDayOfYear.js";
 import "../src/styles.css";
 
 const localStorage = new LocalStorageManager("todoAppData");
 const today = getDayOfYear(new Date());
 
-let projectManager = new ProjectManager();
-
 // Initialize the project manager with data from local storage
 const stored = localStorage.load();
-if (stored) {
-  console.log("Data loaded from local storage:", stored);
-  projectManager = new ProjectManager(stored);
-} else {
-  // Create a default project if no data is found
 
-  projectManager.addProject("defaultProject", "default project");
-}
+const storedProjects = localStorage.load();
+
+
+
+// Rehydrate projects and their tasks
+let projectManager = new ProjectManager(
+  storedProjects
+    ? storedProjects.map((project) => {
+        const rehydratedProject = new Project(project.name, project.description);
+        rehydratedProject.tasks = project.tasks.map(
+          (task) =>
+            new TodoItem(
+              task.title,
+              task.description,
+              task.completed,
+              task.dueDate,
+              task.priority
+            )
+        );
+        return rehydratedProject;
+      })
+    : []
+);
 
 let domController = new DOMController(projectManager);
 
