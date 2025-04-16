@@ -48,18 +48,46 @@ class DOMController {
       const projectDiv = document.createElement("div");
       const button = document.createElement("button");
       const deleteButton = document.createElement("button");
-      deleteButton.innerText = "Delete";
+      const editButton = document.createElement("button");
+      editButton.innerText = "✏️";
+      editButton.title = "Edit Project";
+      editButton.classList.add("edit-button");
+      editButton.style.visibility = "hidden";
+      deleteButton.innerText = "🗑️";
+      deleteButton.title = "Delete Project";
       deleteButton.classList.add("delete-button");
-      const h1 = document.createElement("h1");
-      h1.classList.add("project-description");
+      deleteButton.style.visibility = "hidden";
+      // const h1 = document.createElement("h1");
+      // h1.classList.add("project-description");
 
       button.innerText = project.name;
-      h1.textContent = project.description;
+      // h1.textContent = project.description;
 
       projectList.appendChild(projectDiv);
       projectDiv.appendChild(button);
+      projectDiv.appendChild(editButton);
       projectDiv.appendChild(deleteButton);
-      projectDiv.appendChild(h1);
+      // projectDiv.appendChild(h1);
+
+      projectDiv.classList.add("project-item");
+      projectDiv.addEventListener("mouseover", () => {
+        deleteButton.style.visibility = "visible";
+        editButton.style.visibility = "visible";
+      });
+      projectDiv.addEventListener("mouseout", () => {
+        deleteButton.style.visibility = "hidden";
+        editButton.style.visibility = "hidden";
+      });
+
+      projectDiv.addEventListener("focusin", () => {
+        deleteButton.style.visibility = "visible";
+        editButton.style.visibility = "visible";
+      });
+
+      projectDiv.addEventListener("focusout", () => {
+        deleteButton.style.visibility = "hidden";
+        editButton.style.visibility = "hidden";
+      });
 
       button.addEventListener("click", () => {
         if (this.activeProjectButton) {
@@ -72,8 +100,29 @@ class DOMController {
       });
 
       deleteButton.addEventListener("click", () => {
+        if (this.projectManager.currentProject.guid === project.guid) {
+          this.projectManager.setCurrentProject();
+        }
         this.projectManager.removeProject(project.guid);
         this.renderProjects();
+        this.renderCurrentProject();
+      });
+
+      editButton.addEventListener("click", () => {
+        const newName = prompt("Enter new project name:", project.name);
+        const newDescription = prompt(
+          "Enter new project description:",
+          project.description
+        );
+        if (newName && newDescription) {
+          this.projectManager.updateProject(
+            project.guid,
+            newName,
+            newDescription
+          );
+          this.renderProjects();
+          this.renderCurrentProject();
+        }
       });
     });
   }
@@ -81,61 +130,163 @@ class DOMController {
   renderTodos(projectGuid) {
     const todoList = document.getElementById("todo-list");
     todoList.innerHTML = "";
-    const todos = this.projectManager.getTodosForProject(projectGuid);
+    const todos =
+      this.projectManager.getTodosForProject(projectGuid) ||
+      this.projectManager.getCurrentProject().tasks;
 
     if (todos.length === 0) {
       const noTodosMessage = document.createElement("li");
       noTodosMessage.textContent = "No todos available for this project.";
+      noTodosMessage.classList.add("no-todos-message");
       todoList.appendChild(noTodosMessage);
       return;
     }
 
     todos.forEach((todo) => {
       const todoItem = document.createElement("li");
-      todoItem.classList.add("todo-item"); // Add a class for styling
-      todoItem.textContent = `${todo.title}: ${todo.description}`;
+      todoItem.classList.add("todo-item");
+
+      // Create a checkbox for completion
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = todo.completed;
+      checkbox.classList.add("todo-checkbox");
+
+      checkbox.addEventListener("change", () => {
+        todo.completed = checkbox.checked;
+        this.projectManager.updateTask(todo);
+      });
+
+      // Create a span for the todo title
+      const todoText = document.createElement("span");
+      todoText.textContent = `${todo.title}`;
+      if (todo.completed) {
+        todoText.style.textDecoration = "line-through";
+      }
+
+      checkbox.addEventListener("change", () => {
+        todoText.style.textDecoration = checkbox.checked
+          ? "line-through"
+          : "none";
+      });
 
       // Create Edit Button
       const editButton = document.createElement("button");
-      editButton.textContent = "Edit";
-      editButton.classList.add("edit-button");
+      editButton.innerHTML = "✏️";
+      editButton.title = "Edit Todo";
+      editButton.classList.add("icon-button", "edit-button");
 
       editButton.addEventListener("click", () => {
-        const newTitle = prompt("Edit todo title:", todo.title);
-        const newDescription = prompt(
-          "Edit todo description:",
-          todo.description
-        );
-        if (newTitle && newDescription) {
-          todo.title = newTitle;
-          todo.description = newDescription;
-          this.projectManager.updateTask(todo); // Add an updateTask method in ProjectManager
+        this.showTodoForm(todo, (updatedTodo) => {
+          Object.assign(todo, updatedTodo);
+          this.projectManager.updateTask(todo);
           this.renderTodos(this.projectManager.currentProject.guid);
-        }
+        });
+      });
+
+      // Add pointer cursor to todoText
+      todoText.style.cursor = "pointer";
+
+      // Add event listener to show the todo form only when clicking on the text
+      todoText.addEventListener("click", () => {
+        this.showTodoForm(todo, (updatedTodo) => {
+          Object.assign(todo, updatedTodo);
+          this.projectManager.updateTask(todo);
+          this.renderTodos(this.projectManager.currentProject.guid);
+        });
       });
 
       // Create Delete Button
       const deleteButton = document.createElement("button");
-      deleteButton.textContent = "Delete";
-      deleteButton.classList.add("delete-button");
+      deleteButton.innerHTML = "🗑️";
+      deleteButton.title = "Delete Todo";
+      deleteButton.classList.add("icon-button", "delete-button");
 
       deleteButton.addEventListener("click", () => {
-        console.log("Deleting todo:", todo.title); // Debugging line
         this.projectManager.removeTask(todo.title);
         this.renderTodos(this.projectManager.currentProject.guid);
       });
 
-      // Append buttons to the todo item
+      // Append elements to the todo item
+      todoItem.appendChild(checkbox);
+      todoItem.appendChild(todoText);
       todoItem.appendChild(editButton);
       todoItem.appendChild(deleteButton);
       todoList.appendChild(todoItem);
     });
   }
 
+  showTodoForm(todo = {}, onSubmit) {
+    const formContainer = document.createElement("div");
+    formContainer.classList.add("todo-form-container");
+
+    const form = document.createElement("form");
+    form.classList.add("todo-form");
+
+    form.innerHTML = `
+        <label>
+            Title:
+            <input type="text" name="title" value="${
+              todo.title || ""
+            }" required />
+        </label>
+        <label>
+            Description:
+            <textarea name="description">${todo.description || ""}</textarea>
+        </label>
+        <label>
+            Due Date:
+            <input type="date" name="dueDate" value="${todo.dueDate || ""}" />
+        </label>
+        <label>
+            Priority:
+            <select name="priority">
+                <option value="low" ${
+                  todo.priority === "low" ? "selected" : ""
+                }>Low</option>
+                <option value="medium" ${
+                  todo.priority === "medium" ? "selected" : ""
+                }>Medium</option>
+                <option value="high" ${
+                  todo.priority === "high" ? "selected" : ""
+                }>High</option>
+            </select>
+        </label>
+        <button type="submit">Save</button>
+        <button type="button" class="cancel-button">Cancel</button>
+    `;
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const updatedTodo = {
+        title: formData.get("title"),
+        description: formData.get("description"),
+        dueDate: formData.get("dueDate"),
+        priority: formData.get("priority"),
+      };
+      onSubmit(updatedTodo);
+      document.body.removeChild(formContainer);
+    });
+
+    form.querySelector(".cancel-button").addEventListener("click", () => {
+      document.body.removeChild(formContainer);
+    });
+
+    formContainer.appendChild(form);
+    document.body.appendChild(formContainer);
+  }
+
   renderCurrentProject() {
-    const currentProjectlabel = document.getElementById("current-projcet");
-    currentProjectlabel.textContent = `${this.projectManager.currentProject.name}`;
-    this.renderTodos(this.projectManager.currentProject.guid);
+    const currentProjectlabel = document.getElementById("current-project");
+    if (this.projectManager.currentProject) {
+      currentProjectlabel.textContent = `${this.projectManager.currentProject.name}`;
+      currentProjectlabel.style.visibility = "visible";
+      this.renderTodos(this.projectManager.currentProject.guid);
+    } else {
+      currentProjectlabel.textContent = "";
+      currentProjectlabel.style.visibility = "hidden";
+    }
   }
 }
 

@@ -14,13 +14,14 @@ const stored = localStorage.load();
 
 const storedProjects = localStorage.load();
 
-
-
 // Rehydrate projects and their tasks
 let projectManager = new ProjectManager(
   storedProjects
     ? storedProjects.map((project) => {
-        const rehydratedProject = new Project(project.name, project.description);
+        const rehydratedProject = new Project(
+          project.name,
+          project.description
+        );
         rehydratedProject.tasks = project.tasks.map(
           (task) =>
             new TodoItem(
@@ -38,7 +39,10 @@ let projectManager = new ProjectManager(
 
 let domController = new DOMController(projectManager);
 
-console.log(projectManager.getProjects());
+projectManager.setCurrentProject(projectManager.getProjects()[0]);
+
+domController.renderCurrentProject();
+
 // Initialize the local storage manager
 
 const form = document.getElementById("todo-form");

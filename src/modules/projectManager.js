@@ -58,6 +58,26 @@ class ProjectManager {
         taskToUpdate.priority = task.priority;
         localStorage.save(this.projects);
       }
+
+      // Save the updated projects to local storage
+      this.projects = this.projects.map((project) =>
+        project.guid === this.currentProject.guid ? this.currentProject : project
+      );
+      localStorage.save(this.projects);
+    }
+  }
+
+  updateProject(projectGuid, newName, newDescription) {
+    const project = this.getProject(projectGuid);
+    if (project) {
+      project.name = newName;
+      project.description = newDescription;
+
+      // Save the updated projects to local storage
+      this.projects = this.projects.map((project) =>
+        project.guid === projectGuid ? project : project
+      );
+      localStorage.save(this.projects);
     }
   }
 
