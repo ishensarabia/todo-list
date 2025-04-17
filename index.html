@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📋 To-Do List</title>
+    <!-- Add an emoji to the title -->
+
+    <!-- Add a favicon -->
+    <link rel="icon" href="eaf4c05467e01767ec8b.png" type="image/x-icon" />
+    <link rel="stylesheet" href="84bb4fc080631c2605f1.css" />
+  <script defer src="bundle.js"></script></head>
+  <body>
+    <div class="layout">
+      <!-- Sidebar for Projects -->
+      <aside class="sidebar">
+        <div class="top-bar">
+          <h2>My Projects</h2>
+          <button id="add-project-btn" class="icon-button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <path d="M12 5v14m7-7H5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <ul id="project-list">
+          <!--DOM controller will add the projects created in the ul div-->
+        </ul>
+      </aside>
+
+      <!-- Main Content for To-Do List -->
+      <main class="main-content">
+        <div class="container">
+          <h2 id="current-project"></h2>
+          
+          <div id="add-todo-container">
+            <h1>Tasks</h1>
+
+            <button id="add-todo-btn" class="icon-button">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M12 5v14m7-7H5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+          <ul id="todo-list">
+            <!-- To-Do items will appear here -->
+          </ul>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
