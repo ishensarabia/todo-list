@@ -1,11 +1,11 @@
 class TodoItem {
-    constructor(title, description, isCompleted = false, deadline, category) {
+    constructor(title, description, isCompleted = false, dueDate, priority) {
         this.title = title;
         this.description = description;
         this.isCompleted = isCompleted;
-        this.deadline = deadline;
+        this.dueDate = dueDate;
         this.creationDate = new Date();
-        this.category = category;
+        this.priority = priority;
     }
 
     markAsCompleted() {

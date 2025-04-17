@@ -28,11 +28,11 @@ body {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: 100%;
-  height: 100%      ;
+  height: 100%;
 }
 
 h1 {
-  text-align: center;
+  text-align: start;
   color: #ddd;
 }
 
@@ -86,7 +86,10 @@ li {
 
 .top-bar {
   display: flex;
-  flex-direction: column;
+  justify-content: flex-start; 
+  align-items: center;
+  border-bottom: 1px solid #2c3e50; /* Line color for separation */
+  gap: 10px;
 }
 
 .sidebar h2 {
@@ -97,46 +100,125 @@ li {
 #project-list {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-}
-
-.project-description {
-  color: #ccc;
-  background-color: #101a24;
-  padding: 10px;
-  border-radius: 4px;
-}
-
-.active {
-  background-color: #105cad;
-  color: white;
+  gap: 10px;
 }
 
 #current-project {
   background-color: #101a24;
   color: white;
   padding: 10px;
-  border-radius: 4px;
+  border-radius: 8px;
   visibility: hidden;
   width: 100%;
-  margin:0;
+  margin: 0;
+}
+
+.project-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #213242;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.project-button {
+  display: flex;
+  flex-direction: row;
+  padding: 10px;
+  color: #ccc;
+  border-radius: 4px;
+}
+
+.project-item:hover {
+  background-color: #2c3e50;
+  color: white;
+}
+
+.project-span {
+  flex: 1;
+  margin-right: 5px;
+  color: #ccc;
+  font-weight: bold;
+}
+
+.active {
+  background-color: #3e5b77;
+  color: white;
+}
+
+#todo-list {
+  display: flex;
+  justify-items: center;
+  align-self: center;
+  width: 80%;
+  flex-direction: column;
 }
 
 /* Style for todo items */
 .todo-item {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    border: 1px solid #101a24;
-    background-color: #2c2c2c;
-    color: #ddd;
-    font-style: oblique;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 0; /* Adjust padding for spacing */
+  color: #ddd; /* Keep the text color consistent */
+  border-style: none;
+  font-weight: bold;
+  background-color: transparent; /* Remove background color */
+}
+
+/* Add border to the items unless it's the last one */
+.todo-item:not(:last-child) {
+  border-bottom: 1px solid #2c3e50; /* Line color for separation */
 }
 
 /* Style for the checkbox */
 .todo-checkbox {
-  margin-right: 10px;
+  appearance: none; /* Remove default checkbox styling */
+  width: 20px;
+  height: 20px;
+  border: 2px solid #2c3e50; /* Border color */
+  border-radius: 4px; /* Rounded corners */
+  background-color: transparent; /* Default background */
   cursor: pointer;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.todo-checkbox:checked {
+  background-color: #2c3e50; /* Green background when checked */
+  border: none;
+  position: relative;
+}
+
+.todo-checkbox:checked::before {
+  content: ""; /* Add a checkmark */
+  width: 100%;
+  height: 100%;
+  background-color: #4caf50; /* Green background */
+  border-radius: 4px; /* Rounded corners */
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.todo-checkbox:hover {
+  background-color: #2c3e50; /* Change background on hover */
+  border-color: #4caf50; /* Change border color on hover */
+}
+
+.todo-checkbox:checked::after {
+  content: "✔"; /* Add a checkmark */
+  color: white;
+  font-size: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .todo-item span {
@@ -144,51 +226,43 @@ li {
   margin-right: 5px;
 }
 
-
 /* Hide buttons by default */
 .todo-item button {
-    display: none;
-    margin-left: 5px;
-    margin-right: 50px;
-    font-size: 14px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+  display: none;
+  margin-left: 5px;
+  margin-right: 50px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 /* Show buttons on hover */
 .todo-item:hover button {
-    display: flex;
+  display: flex;
 }
 
 /* Edit button styling */
-.edit-button {
-    background-color: #ffc107;
-    color: #fff;
-}
-
-.edit-button:hover {
-    background-color: #e0a800;
-}
-
-/* Delete button styling */
+.edit-button,
 .delete-button {
-    background-color: #dc3545;
-    color: #fff;
+  background-color: #ffc10700;
+  color: #fff;
+  font-weight: bold;
+  font-size: 15px;
 }
 
+.edit-button:hover,
 .delete-button:hover {
-    background-color: #c82333;
+  background-color: #2c3e50;
 }
 
 .no-todos-message {
-    color: #ccc;
-    text-align: center;
-    margin-top: 20px;
-    border: none;
-    text-align: center;
+  color: #ccc;
+  text-align: center;
+  margin-top: 20px;
+  border: none;
+  text-align: center;
 }
-
 
 .todo-form-container {
   position: fixed;
@@ -204,7 +278,7 @@ li {
 }
 
 .todo-form {
-  background: #fff;
+  background: #101a24;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -226,9 +300,27 @@ li {
 .todo-form select {
   padding: 8px;
   font-size: 14px;
-  border: 1px solid #ccc;
+  border: 1px solid #213242;
+  background-color: #213242;
+  color: #ccc;
   border-radius: 4px;
   margin-top: 5px;
+}
+input[type="date"] {
+  color: #fff;
+  background-color: #213242;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.todo-form label {
+  color: #ccc;
+  font-weight: bold;
 }
 
 .todo-form button {
@@ -242,9 +334,147 @@ li {
 .todo-form button[type="submit"] {
   background-color: #007bff;
   color: #fff;
+  font-weight: bold;
 }
 
 .todo-form .cancel-button {
   background-color: #dc3545;
   color: #fff;
+  font-weight: bold;
+}
+
+.project-form-container {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(
+    0,
+    0,
+    0,
+    0.7
+  ); /* Slightly darker overlay for better focus */
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.project-form {
+  display: flex;
+  flex-direction: column;
+  background: #101a24; /* Consistent dark background */
+  padding: 25px; /* Slightly larger padding for better spacing */
+  border-radius: 10px; /* Softer corners */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Slightly stronger shadow for depth */
+  width: 320px; /* Slightly wider for better usability */
+  gap: 15px; /* Increased gap for better spacing between elements */
+}
+
+.project-form label {
+  display: flex;
+  flex-direction: column;
+  color: #ccc; /* Consistent text color */
+  font-weight: bold;
+  font-size: 14px; /* Slightly larger font for readability */
+}
+
+.project-form input,
+.project-form textarea {
+  font-size: 14px;
+  border: 1px solid #2c3e50; /* Slightly darker border for better contrast */
+  background-color: #213242; /* Consistent input background */
+  color: #ddd; /* Lighter text for better readability */
+  border-radius: 6px; /* Softer corners */
+  padding: 10px; /* Increased padding for better usability */
+  margin-top: 5px;
+}
+
+.project-form input:focus,
+.project-form textarea:focus {
+  outline: none;
+  border-color: #007bff; /* Highlight border on focus */
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Subtle glow effect */
+}
+
+.project-form button {
+  padding: 12px 20px; /* Larger buttons for better usability */
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+.project-form button[type="submit"] {
+  background-color: #4caf50; /* Consistent green for submit */
+  color: white;
+}
+
+.project-form button[type="submit"]:hover {
+  background-color: #45a049; /* Slightly darker green on hover */
+}
+
+.project-form .cancel-button {
+  background-color: #f44336; /* Consistent red for cancel */
+  color: white;
+}
+
+.project-form .cancel-button:hover {
+  background-color: #d32f2f; /* Slightly darker red on hover */
+}
+
+.overdue-label {
+  color: #ff6b6b; /* Softer red for overdue label */
+  background-color: #ff6b6b13;
+  font-weight: bold;
+  margin-left: 5px;
+  font-size: 12px; /* Slightly smaller font for subtle emphasis */
+}
+
+.strike-through-line {
+  position: absolute; /* Positioning for the line */
+  height: 2px;
+  background-color: #ffffffb4; /* Red color for the line */
+  width: 47%; /* Full width of the todo item */
+  transform: translate(-15%, -50%);
+  visibility: hidden; /* Hidden by default */
+  z-index: 1; /* Ensure it appears above other elements */
+}
+
+.add-todo {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  border-bottom: 1px solid #2c3e50; /* Line color for separation */
+  gap: 10px;
+}
+
+#add-todo-btn,
+.top-bar button {
+  background-color: #307cc977;
+  color: #fff;
+  font-weight: bold;
+  padding: 1px;
+  cursor: pointer;
+}
+
+#add-todo-btn:hover,
+.sidebar button:hover {
+  background-color: #2c3e50;
+}
+
+/* filepath: /home/sci-punk/repos/todo-list/src/styles.css */
+.icon-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  border: none;
+  border-radius: 60%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }

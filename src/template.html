@@ -16,7 +16,11 @@
       <aside class="sidebar">
         <div class="top-bar">
           <h2>My Projects</h2>
-          <button id="add-project-btn">Add Project</button>
+          <button id="add-project-btn" class="icon-button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <path d="M12 5v14m7-7H5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
 
         <ul id="project-list">
@@ -28,10 +32,15 @@
       <main class="main-content">
         <div class="container">
           <h2 id="current-project"></h2>
-          <h1>To-Do List</h1>
-
+          
           <div class="add-todo">
-            <button id="add-todo-btn">Add</button>
+            <h1>Tasks</h1>
+
+            <button id="add-todo-btn" class="icon-button">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M12 5v14m7-7H5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
           </div>
           <ul id="todo-list">
             <!-- To-Do items will appear here -->

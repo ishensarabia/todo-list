@@ -1,4 +1,4 @@
-import { de } from "date-fns/locale";
+import { getDayOfYear, format, parseISO, isValid } from "date-fns";
 
 class DOMController {
   constructor(projectManager) {
@@ -17,12 +17,11 @@ class DOMController {
   bindAddProjectButton() {
     const addProjectButton = document.getElementById("add-project-btn");
     addProjectButton.addEventListener("click", () => {
-      const projectName = prompt("Enter project name:");
-      const projectDescription = prompt("Enter project description:");
-      if (projectName) {
-        this.projectManager.addProject(projectName, projectDescription);
+      this.showProjectForm({}, (newProject) => {
+        this.projectManager.addProject(newProject.name, newProject.description);
         this.renderProjects();
-      }
+        this.renderCurrentProject();
+      });
     });
   }
 
@@ -30,12 +29,18 @@ class DOMController {
     const addTodoButton = document.getElementById("add-todo-btn");
     if (addTodoButton) {
       addTodoButton.addEventListener("click", () => {
-        const projectName = prompt("Enter project name for the todo:");
-        const todoDescription = prompt("Enter todo description:");
-        if (projectName) {
-          this.projectManager.addTask(projectName, todoDescription);
+        // Show the todo form for creating a new todo
+        this.showTodoForm({}, (newTodo) => {
+          // Add the new todo to the current project
+          this.projectManager.addTask(
+            newTodo.title,
+            newTodo.description,
+            newTodo.dueDate,
+            newTodo.priority
+          );
+          // Re-render the todos for the current project
           this.renderTodos(this.projectManager.currentProject.guid);
-        }
+        });
       });
     }
   }
@@ -46,9 +51,11 @@ class DOMController {
     const projects = this.projectManager.getProjects();
     projects.forEach((project) => {
       const projectDiv = document.createElement("div");
-      const button = document.createElement("button");
+      const projectSpan = document.createElement("span");
       const deleteButton = document.createElement("button");
       const editButton = document.createElement("button");
+      const overdueLabel = document.createElement("span");
+
       editButton.innerText = "✏️";
       editButton.title = "Edit Project";
       editButton.classList.add("edit-button");
@@ -57,19 +64,30 @@ class DOMController {
       deleteButton.title = "Delete Project";
       deleteButton.classList.add("delete-button");
       deleteButton.style.visibility = "hidden";
-      // const h1 = document.createElement("h1");
-      // h1.classList.add("project-description");
 
-      button.innerText = project.name;
-      // h1.textContent = project.description;
+      projectSpan.innerText = project.name;
+      projectSpan.classList.add("project-span");
 
       projectList.appendChild(projectDiv);
-      projectDiv.appendChild(button);
+      projectDiv.appendChild(projectSpan);
       projectDiv.appendChild(editButton);
       projectDiv.appendChild(deleteButton);
-      // projectDiv.appendChild(h1);
 
       projectDiv.classList.add("project-item");
+
+
+      // Check if the project is overdue
+      if (this.projectManager.isProjectOverdue(project)) {
+        // Get the number of overdue tasks
+        const overdueTasks =
+          this.projectManager.getNumberOfOverdueTasks(project);
+        overdueLabel.textContent = `Overdue: ${overdueTasks} ${
+          overdueTasks === 1 ? "task" : "tasks"
+        }`;
+        overdueLabel.classList.add("overdue-label");
+        projectDiv.appendChild(overdueLabel);
+      }
+
       projectDiv.addEventListener("mouseover", () => {
         deleteButton.style.visibility = "visible";
         editButton.style.visibility = "visible";
@@ -89,14 +107,26 @@ class DOMController {
         editButton.style.visibility = "hidden";
       });
 
-      button.addEventListener("click", () => {
-        if (this.activeProjectButton) {
-          this.activeProjectButton.classList.remove("active");
+      projectDiv.addEventListener("click", () => {
+        if (this.activeProject) {
+          this.activeProject.classList.remove("active");
         }
-        this.activeProjectButton = button;
+        this.activeProject = projectDiv;
         this.projectManager.setCurrentProject(project);
         this.renderCurrentProject();
-        button.classList.add("active");
+        projectDiv.classList.add("active");
+        projectSpan.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+
+
+      projectSpan.addEventListener("click", () => {
+        if (this.activeProject) {
+          this.activeProject.classList.remove("active");
+        }
+        this.activeProject = projectSpan;
+        this.projectManager.setCurrentProject(project);
+        this.renderCurrentProject();
+        projectSpan.classList.add("active");
       });
 
       deleteButton.addEventListener("click", () => {
@@ -109,27 +139,24 @@ class DOMController {
       });
 
       editButton.addEventListener("click", () => {
-        const newName = prompt("Enter new project name:", project.name);
-        const newDescription = prompt(
-          "Enter new project description:",
-          project.description
-        );
-        if (newName && newDescription) {
+        this.showProjectForm(project, (updatedProject) => {
           this.projectManager.updateProject(
             project.guid,
-            newName,
-            newDescription
+            updatedProject.name,
+            updatedProject.description
           );
           this.renderProjects();
           this.renderCurrentProject();
-        }
+        });
       });
     });
   }
 
   renderTodos(projectGuid) {
     const todoList = document.getElementById("todo-list");
+    // Clear the existing todo list
     todoList.innerHTML = "";
+
     const todos =
       this.projectManager.getTodosForProject(projectGuid) ||
       this.projectManager.getCurrentProject().tasks;
@@ -164,11 +191,53 @@ class DOMController {
         todoText.style.textDecoration = "line-through";
       }
 
-      checkbox.addEventListener("change", () => {
-        todoText.style.textDecoration = checkbox.checked
-          ? "line-through"
-          : "none";
-      });
+      // Create a div for the strike-through line
+      const strikeThroughLine = document.createElement("div");
+      strikeThroughLine.classList.add("strike-through-line");
+      strikeThroughLine.style.visibility = todo.completed
+        ? "visible"
+        : "hidden";
+
+        checkbox.addEventListener("change", () => {
+          todo.completed = checkbox.checked;
+          this.projectManager.updateTask(todo);
+      
+          // Toggle the visibility of the strike-through line
+          strikeThroughLine.style.visibility = checkbox.checked ? "visible" : "hidden";
+        });
+
+      // Add due date with date-fns formatting
+      const dueDate = document.createElement("span");
+      if (todo.dueDate) {
+        // Check if the due date is today or overdue
+        const parsedDate = parseISO(todo.dueDate);
+        const formattedDate = format(parseISO(todo.dueDate), "MMMM do, yyyy");
+        const dayOfYear = getDayOfYear(parsedDate);
+        console.log(dayOfYear, getDayOfYear(new Date()));
+        const isToday = dayOfYear === getDayOfYear(new Date());
+        const isOverdue = this.projectManager.isTaskOverdue(todo);
+        const overdueDays = Math.floor(
+          (new Date() - new Date(todo.dueDate)) / (1000 * 60 * 60 * 24)
+        );
+        if (isToday) {
+          dueDate.textContent = "📅 Today";
+        } else if (isOverdue) {
+          dueDate.textContent = `📅 ${formattedDate} (${
+            overdueDays === 1 ? "Overdue" : `${overdueDays} days overdue`
+          })`;
+          dueDate.classList.add("overdue-label");
+        } else {
+          dueDate.textContent = `📅 ${formattedDate}`;
+        }
+      } else {
+        dueDate.textContent = "";
+      }
+      dueDate.classList.add("todo-due-date");
+
+      // Add priority
+      const priority = document.createElement("span");
+      priority.textContent = `Priority: ${todo.priority || "None"}`;
+      priority.classList.add("todo-priority");
 
       // Create Edit Button
       const editButton = document.createElement("button");
@@ -181,6 +250,7 @@ class DOMController {
           Object.assign(todo, updatedTodo);
           this.projectManager.updateTask(todo);
           this.renderTodos(this.projectManager.currentProject.guid);
+          this.renderProjects();
         });
       });
 
@@ -193,6 +263,7 @@ class DOMController {
           Object.assign(todo, updatedTodo);
           this.projectManager.updateTask(todo);
           this.renderTodos(this.projectManager.currentProject.guid);
+          this.renderProjects();
         });
       });
 
@@ -210,8 +281,11 @@ class DOMController {
       // Append elements to the todo item
       todoItem.appendChild(checkbox);
       todoItem.appendChild(todoText);
+      todoItem.appendChild(dueDate);
+      todoItem.appendChild(priority);
       todoItem.appendChild(editButton);
       todoItem.appendChild(deleteButton);
+      todoItem.appendChild(strikeThroughLine);
       todoList.appendChild(todoItem);
     });
   }
@@ -225,21 +299,21 @@ class DOMController {
 
     form.innerHTML = `
         <label>
-            Title:
+            Title
             <input type="text" name="title" value="${
               todo.title || ""
             }" required />
         </label>
         <label>
-            Description:
+            Description
             <textarea name="description">${todo.description || ""}</textarea>
         </label>
         <label>
-            Due Date:
+            Due Date
             <input type="date" name="dueDate" value="${todo.dueDate || ""}" />
         </label>
         <label>
-            Priority:
+            Priority
             <select name="priority">
                 <option value="low" ${
                   todo.priority === "low" ? "selected" : ""
@@ -259,13 +333,63 @@ class DOMController {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       const formData = new FormData(form);
+      const dueDate = formData.get("dueDate");
+
+      // Validate the due date
+      if (dueDate && !isValid(new Date(dueDate))) {
+        alert("Invalid due date. Please enter a valid date.");
+        return;
+      }
+
       const updatedTodo = {
         title: formData.get("title"),
         description: formData.get("description"),
-        dueDate: formData.get("dueDate"),
+        dueDate: dueDate || null,
         priority: formData.get("priority"),
       };
       onSubmit(updatedTodo);
+      document.body.removeChild(formContainer);
+    });
+
+    form.querySelector(".cancel-button").addEventListener("click", () => {
+      document.body.removeChild(formContainer);
+    });
+
+    formContainer.appendChild(form);
+    document.body.appendChild(formContainer);
+  }
+
+  showProjectForm(project = {}, onSubmit) {
+    const formContainer = document.createElement("div");
+    formContainer.classList.add("project-form-container");
+
+    const form = document.createElement("form");
+    form.classList.add("project-form");
+
+    form.innerHTML = `
+        <label>
+            Project Name
+            <input type="text" name="name" value="${
+              project.name || ""
+            }" required />
+        </label>
+        <label>
+            Description
+            <textarea name="description">${project.description || ""}</textarea>
+        </label>
+        <button type="submit">Save</button>
+        <button type="button" class="cancel-button">Cancel</button>
+    `;
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+
+      const updatedProject = {
+        name: formData.get("name"),
+        description: formData.get("description"),
+      };
+      onSubmit(updatedProject);
       document.body.removeChild(formContainer);
     });
 
