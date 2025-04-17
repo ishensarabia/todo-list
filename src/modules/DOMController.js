@@ -178,7 +178,9 @@ class DOMController {
     // Create a div for the strike-through line
     const strikeThroughLine = document.createElement("div");
     strikeThroughLine.classList.add("strike-through-line");
-    strikeThroughLine.style.visibility = todo.isCompleted ? "visible" : "hidden";
+    strikeThroughLine.style.visibility = todo.isCompleted
+      ? "visible"
+      : "hidden";
 
     const editButton = this.createButton(
       "✏️",
@@ -226,7 +228,9 @@ class DOMController {
       const strikeThroughLine = checkbox.parentElement.querySelector(
         ".strike-through-line"
       );
-      strikeThroughLine.style.visibility = todo.isCompleted ? "visible" : "hidden";
+      strikeThroughLine.style.visibility = todo.isCompleted
+        ? "visible"
+        : "hidden";
     });
 
     return checkbox;
@@ -248,6 +252,7 @@ class DOMController {
       const parsedDate = parseISO(todo.dueDate);
       const formattedDate = format(parsedDate, "MMMM do, yyyy");
       const isOverdue = this.projectManager.isTaskOverdue(todo);
+      const isToday = getDayOfYear(parsedDate) == getDayOfYear(new Date());
       const overdueDays = Math.floor(
         (new Date() - new Date(todo.dueDate)) / (1000 * 60 * 60 * 24)
       );
@@ -255,6 +260,8 @@ class DOMController {
       if (isOverdue) {
         dueDate.textContent = `📅 ${formattedDate} (${overdueDays} days overdue)`;
         dueDate.classList.add("overdue-label");
+      } else if (isToday) {
+        dueDate.textContent = `📅 ${formattedDate} (Due today)`;
       } else {
         dueDate.textContent = `📅 ${formattedDate}`;
       }

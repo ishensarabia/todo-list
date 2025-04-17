@@ -140,8 +140,9 @@ class ProjectManager {
 
   isTaskOverdue(task) {
     if (task.dueDate) {
-      const taskDueDate = new Date(task.dueDate);
-      const today = new Date();
+      const parsedDate = parseISO(task.dueDate);
+      const taskDueDate = getDayOfYear(parsedDate);
+      const today = getDayOfYear(new Date());
       return isValid(taskDueDate) && taskDueDate < today;
     }
     return false;
