@@ -3,6 +3,7 @@ import { getDayOfYear, format, parseISO, isValid } from "date-fns";
 class DOMController {
   constructor(projectManager) {
     this.projectManager = projectManager;
+    this.activeProject = null;
     this.init();
   }
 
@@ -20,7 +21,6 @@ class DOMController {
       this.showProjectForm({}, (newProject) => {
         this.projectManager.addProject(newProject.name, newProject.description);
         this.renderProjects();
-        this.renderCurrentProject();
       });
     });
   }
@@ -29,16 +29,13 @@ class DOMController {
     const addTodoButton = document.getElementById("add-todo-btn");
     if (addTodoButton) {
       addTodoButton.addEventListener("click", () => {
-        // Show the todo form for creating a new todo
         this.showTodoForm({}, (newTodo) => {
-          // Add the new todo to the current project
           this.projectManager.addTask(
             newTodo.title,
             newTodo.description,
             newTodo.dueDate,
             newTodo.priority
           );
-          // Re-render the todos for the current project
           this.renderTodos(this.projectManager.currentProject.guid);
         });
       });
@@ -49,96 +46,26 @@ class DOMController {
     const projectList = document.getElementById("project-list");
     projectList.innerHTML = "";
     const projects = this.projectManager.getProjects();
+
     projects.forEach((project) => {
-      const projectDiv = document.createElement("div");
-      const projectSpan = document.createElement("span");
-      const deleteButton = document.createElement("button");
-      const editButton = document.createElement("button");
-      const overdueLabel = document.createElement("span");
-
-      editButton.innerText = "✏️";
-      editButton.title = "Edit Project";
-      editButton.classList.add("edit-button");
-      editButton.style.visibility = "hidden";
-      deleteButton.innerText = "🗑️";
-      deleteButton.title = "Delete Project";
-      deleteButton.classList.add("delete-button");
-      deleteButton.style.visibility = "hidden";
-
-      projectSpan.innerText = project.name;
-      projectSpan.classList.add("project-span");
-
+      const projectDiv = this.createProjectElement(project);
       projectList.appendChild(projectDiv);
-      projectDiv.appendChild(projectSpan);
-      projectDiv.appendChild(editButton);
-      projectDiv.appendChild(deleteButton);
+    });
+  }
 
-      projectDiv.classList.add("project-item");
+  createProjectElement(project) {
+    const projectDiv = document.createElement("div");
+    projectDiv.classList.add("project-item");
 
+    const projectSpan = document.createElement("span");
+    projectSpan.textContent = project.name;
+    projectSpan.classList.add("project-span");
 
-      // Check if the project is overdue
-      if (this.projectManager.isProjectOverdue(project)) {
-        // Get the number of overdue tasks
-        const overdueTasks =
-          this.projectManager.getNumberOfOverdueTasks(project);
-        overdueLabel.textContent = `Overdue: ${overdueTasks} ${
-          overdueTasks === 1 ? "task" : "tasks"
-        }`;
-        overdueLabel.classList.add("overdue-label");
-        projectDiv.appendChild(overdueLabel);
-      }
-
-      projectDiv.addEventListener("mouseover", () => {
-        deleteButton.style.visibility = "visible";
-        editButton.style.visibility = "visible";
-      });
-      projectDiv.addEventListener("mouseout", () => {
-        deleteButton.style.visibility = "hidden";
-        editButton.style.visibility = "hidden";
-      });
-
-      projectDiv.addEventListener("focusin", () => {
-        deleteButton.style.visibility = "visible";
-        editButton.style.visibility = "visible";
-      });
-
-      projectDiv.addEventListener("focusout", () => {
-        deleteButton.style.visibility = "hidden";
-        editButton.style.visibility = "hidden";
-      });
-
-      projectDiv.addEventListener("click", () => {
-        if (this.activeProject) {
-          this.activeProject.classList.remove("active");
-        }
-        this.activeProject = projectDiv;
-        this.projectManager.setCurrentProject(project);
-        this.renderCurrentProject();
-        projectDiv.classList.add("active");
-        projectSpan.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      });
-
-
-      projectSpan.addEventListener("click", () => {
-        if (this.activeProject) {
-          this.activeProject.classList.remove("active");
-        }
-        this.activeProject = projectSpan;
-        this.projectManager.setCurrentProject(project);
-        this.renderCurrentProject();
-        projectSpan.classList.add("active");
-      });
-
-      deleteButton.addEventListener("click", () => {
-        if (this.projectManager.currentProject.guid === project.guid) {
-          this.projectManager.setCurrentProject();
-        }
-        this.projectManager.removeProject(project.guid);
-        this.renderProjects();
-        this.renderCurrentProject();
-      });
-
-      editButton.addEventListener("click", () => {
+    const editButton = this.createButton(
+      "✏️",
+      "Edit Project",
+      "edit-button",
+      () => {
         this.showProjectForm(project, (updatedProject) => {
           this.projectManager.updateProject(
             project.guid,
@@ -148,146 +75,223 @@ class DOMController {
           this.renderProjects();
           this.renderCurrentProject();
         });
-      });
+      }
+    );
+
+    const deleteButton = this.createButton(
+      "🗑️",
+      "Delete Project",
+      "delete-button",
+      () => {
+        this.handleProjectDeletion(project);
+      }
+    );
+
+    const overdueLabel = this.createOverdueLabel(project);
+
+    projectDiv.appendChild(projectSpan);
+    projectDiv.appendChild(editButton);
+    projectDiv.appendChild(deleteButton);
+    if (overdueLabel) projectDiv.appendChild(overdueLabel);
+
+    projectDiv.addEventListener("click", () => {
+      this.setActiveProject(project, projectDiv);
     });
+
+    return projectDiv;
+  }
+
+  createButton(text, title, className, onClick) {
+    const button = document.createElement("button");
+    button.textContent = text;
+    button.title = title;
+    button.classList.add("icon-button", className);
+    button.addEventListener("click", (event) => {
+      event.stopPropagation(); // Prevent triggering parent click events
+      onClick();
+    });
+    return button;
+  }
+
+  createOverdueLabel(project) {
+    if (this.projectManager.isProjectOverdue(project)) {
+      const overdueTasks = this.projectManager.getNumberOfOverdueTasks(project);
+      const overdueLabel = document.createElement("span");
+      overdueLabel.textContent = `Overdue: ${overdueTasks} ${
+        overdueTasks === 1 ? "task" : "tasks"
+      }`;
+      overdueLabel.classList.add("overdue-label");
+      return overdueLabel;
+    }
+    return null;
+  }
+
+  setActiveProject(project, projectDiv) {
+    if (this.activeProject) {
+      this.activeProject.classList.remove("active");
+    }
+    this.activeProject = projectDiv;
+    this.projectManager.setCurrentProject(project);
+    this.renderCurrentProject();
+    projectDiv.classList.add("active");
+    document.getElementById("add-todo-container").style.visibility = "visible";
+  }
+
+  handleProjectDeletion(project) {
+    if (this.projectManager.currentProject.guid === project.guid) {
+      this.projectManager.setCurrentProject(null); // Clear the current project
+      this.clearTodos();
+      document.getElementById("add-todo-container").style.visibility = "hidden";
+    }
+    this.projectManager.removeProject(project.guid);
+    this.renderProjects();
+    this.renderCurrentProject();
   }
 
   renderTodos(projectGuid) {
     const todoList = document.getElementById("todo-list");
-    // Clear the existing todo list
-    todoList.innerHTML = "";
+    this.clearTodos();
 
     const todos =
       this.projectManager.getTodosForProject(projectGuid) ||
       this.projectManager.getCurrentProject().tasks;
 
     if (todos.length === 0) {
-      const noTodosMessage = document.createElement("li");
-      noTodosMessage.textContent = "No todos available for this project.";
-      noTodosMessage.classList.add("no-todos-message");
-      todoList.appendChild(noTodosMessage);
+      this.displayNoTodosMessage(todoList);
       return;
     }
 
     todos.forEach((todo) => {
-      const todoItem = document.createElement("li");
-      todoItem.classList.add("todo-item");
-
-      // Create a checkbox for completion
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.checked = todo.completed;
-      checkbox.classList.add("todo-checkbox");
-
-      checkbox.addEventListener("change", () => {
-        todo.completed = checkbox.checked;
-        this.projectManager.updateTask(todo);
-      });
-
-      // Create a span for the todo title
-      const todoText = document.createElement("span");
-      todoText.textContent = `${todo.title}`;
-      if (todo.completed) {
-        todoText.style.textDecoration = "line-through";
-      }
-
-      // Create a div for the strike-through line
-      const strikeThroughLine = document.createElement("div");
-      strikeThroughLine.classList.add("strike-through-line");
-      strikeThroughLine.style.visibility = todo.completed
-        ? "visible"
-        : "hidden";
-
-        checkbox.addEventListener("change", () => {
-          todo.completed = checkbox.checked;
-          this.projectManager.updateTask(todo);
-      
-          // Toggle the visibility of the strike-through line
-          strikeThroughLine.style.visibility = checkbox.checked ? "visible" : "hidden";
-        });
-
-      // Add due date with date-fns formatting
-      const dueDate = document.createElement("span");
-      if (todo.dueDate) {
-        // Check if the due date is today or overdue
-        const parsedDate = parseISO(todo.dueDate);
-        const formattedDate = format(parseISO(todo.dueDate), "MMMM do, yyyy");
-        const dayOfYear = getDayOfYear(parsedDate);
-        console.log(dayOfYear, getDayOfYear(new Date()));
-        const isToday = dayOfYear === getDayOfYear(new Date());
-        const isOverdue = this.projectManager.isTaskOverdue(todo);
-        const overdueDays = Math.floor(
-          (new Date() - new Date(todo.dueDate)) / (1000 * 60 * 60 * 24)
-        );
-        if (isToday) {
-          dueDate.textContent = "📅 Today";
-        } else if (isOverdue) {
-          dueDate.textContent = `📅 ${formattedDate} (${
-            overdueDays === 1 ? "Overdue" : `${overdueDays} days overdue`
-          })`;
-          dueDate.classList.add("overdue-label");
-        } else {
-          dueDate.textContent = `📅 ${formattedDate}`;
-        }
-      } else {
-        dueDate.textContent = "";
-      }
-      dueDate.classList.add("todo-due-date");
-
-      // Add priority
-      const priority = document.createElement("span");
-      priority.textContent = `Priority: ${todo.priority || "None"}`;
-      priority.classList.add("todo-priority");
-
-      // Create Edit Button
-      const editButton = document.createElement("button");
-      editButton.innerHTML = "✏️";
-      editButton.title = "Edit Todo";
-      editButton.classList.add("icon-button", "edit-button");
-
-      editButton.addEventListener("click", () => {
-        this.showTodoForm(todo, (updatedTodo) => {
-          Object.assign(todo, updatedTodo);
-          this.projectManager.updateTask(todo);
-          this.renderTodos(this.projectManager.currentProject.guid);
-          this.renderProjects();
-        });
-      });
-
-      // Add pointer cursor to todoText
-      todoText.style.cursor = "pointer";
-
-      // Add event listener to show the todo form only when clicking on the text
-      todoText.addEventListener("click", () => {
-        this.showTodoForm(todo, (updatedTodo) => {
-          Object.assign(todo, updatedTodo);
-          this.projectManager.updateTask(todo);
-          this.renderTodos(this.projectManager.currentProject.guid);
-          this.renderProjects();
-        });
-      });
-
-      // Create Delete Button
-      const deleteButton = document.createElement("button");
-      deleteButton.innerHTML = "🗑️";
-      deleteButton.title = "Delete Todo";
-      deleteButton.classList.add("icon-button", "delete-button");
-
-      deleteButton.addEventListener("click", () => {
-        this.projectManager.removeTask(todo.title);
-        this.renderTodos(this.projectManager.currentProject.guid);
-      });
-
-      // Append elements to the todo item
-      todoItem.appendChild(checkbox);
-      todoItem.appendChild(todoText);
-      todoItem.appendChild(dueDate);
-      todoItem.appendChild(priority);
-      todoItem.appendChild(editButton);
-      todoItem.appendChild(deleteButton);
-      todoItem.appendChild(strikeThroughLine);
+      const todoItem = this.createTodoElement(todo);
       todoList.appendChild(todoItem);
     });
+  }
+
+  createTodoElement(todo) {
+    const todoItem = document.createElement("li");
+    todoItem.classList.add("todo-item");
+
+    const checkbox = this.createCheckbox(todo);
+    const todoText = this.createTodoText(todo);
+    const dueDate = this.createDueDate(todo);
+    const priority = this.createPriority(todo);
+    // Create a div for the strike-through line
+    const strikeThroughLine = document.createElement("div");
+    strikeThroughLine.classList.add("strike-through-line");
+    strikeThroughLine.style.visibility = todo.isCompleted ? "visible" : "hidden";
+
+    const editButton = this.createButton(
+      "✏️",
+      "Edit Todo",
+      "edit-button",
+      () => {
+        this.showTodoForm(todo, (updatedTodo) => {
+          Object.assign(todo, updatedTodo);
+          this.projectManager.updateTask(todo);
+          this.renderTodos(this.projectManager.currentProject.guid);
+        });
+      }
+    );
+    const deleteButton = this.createButton(
+      "🗑️",
+      "Delete Todo",
+      "delete-button",
+      () => {
+        this.projectManager.removeTask(todo.title);
+        this.renderTodos(this.projectManager.currentProject.guid);
+      }
+    );
+
+    todoItem.appendChild(checkbox);
+    todoItem.appendChild(todoText);
+    todoItem.appendChild(dueDate);
+    todoItem.appendChild(priority);
+    todoItem.appendChild(editButton);
+    todoItem.appendChild(deleteButton);
+    todoItem.appendChild(strikeThroughLine);
+
+    return todoItem;
+  }
+
+  createCheckbox(todo) {
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = todo.isCompleted;
+    checkbox.classList.add("todo-checkbox");
+
+    checkbox.addEventListener("change", () => {
+      todo.isCompleted = checkbox.checked;
+      this.projectManager.updateTask(todo);
+      // Update the strike-through line visibility
+      const strikeThroughLine = checkbox.parentElement.querySelector(
+        ".strike-through-line"
+      );
+      strikeThroughLine.style.visibility = todo.isCompleted ? "visible" : "hidden";
+    });
+
+    return checkbox;
+  }
+
+  createTodoText(todo) {
+    const todoText = document.createElement("span");
+    todoText.textContent = todo.title;
+    todoText.style.cursor = "pointer";
+    if (todo.completed) {
+      todoText.style.textDecoration = "line-through";
+    }
+    return todoText;
+  }
+
+  createDueDate(todo) {
+    const dueDate = document.createElement("span");
+    if (todo.dueDate) {
+      const parsedDate = parseISO(todo.dueDate);
+      const formattedDate = format(parsedDate, "MMMM do, yyyy");
+      const isOverdue = this.projectManager.isTaskOverdue(todo);
+      const overdueDays = Math.floor(
+        (new Date() - new Date(todo.dueDate)) / (1000 * 60 * 60 * 24)
+      );
+
+      if (isOverdue) {
+        dueDate.textContent = `📅 ${formattedDate} (${overdueDays} days overdue)`;
+        dueDate.classList.add("overdue-label");
+      } else {
+        dueDate.textContent = `📅 ${formattedDate}`;
+      }
+    }
+    dueDate.classList.add("todo-due-date");
+    return dueDate;
+  }
+
+  createPriority(todo) {
+    const priority = document.createElement("span");
+    priority.textContent = `Priority: ${todo.priority || "None"}`;
+    priority.classList.add("todo-priority");
+    return priority;
+  }
+
+  displayNoTodosMessage(todoList) {
+    const noTodosMessage = document.createElement("li");
+    noTodosMessage.textContent = "No todos available for this project.";
+    noTodosMessage.classList.add("no-todos-message");
+    todoList.appendChild(noTodosMessage);
+  }
+
+  renderCurrentProject() {
+    const currentProjectLabel = document.getElementById("current-project");
+    if (this.projectManager.currentProject) {
+      currentProjectLabel.textContent = this.projectManager.currentProject.name;
+      currentProjectLabel.style.visibility = "visible";
+      this.renderTodos(this.projectManager.currentProject.guid);
+    } else {
+      currentProjectLabel.textContent = "";
+      currentProjectLabel.style.visibility = "hidden";
+    }
+  }
+
+  clearTodos() {
+    const todoList = document.getElementById("todo-list");
+    todoList.innerHTML = "";
   }
 
   showTodoForm(todo = {}, onSubmit) {
@@ -333,18 +337,10 @@ class DOMController {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       const formData = new FormData(form);
-      const dueDate = formData.get("dueDate");
-
-      // Validate the due date
-      if (dueDate && !isValid(new Date(dueDate))) {
-        alert("Invalid due date. Please enter a valid date.");
-        return;
-      }
-
       const updatedTodo = {
         title: formData.get("title"),
         description: formData.get("description"),
-        dueDate: dueDate || null,
+        dueDate: formData.get("dueDate") || null,
         priority: formData.get("priority"),
       };
       onSubmit(updatedTodo);
@@ -384,7 +380,6 @@ class DOMController {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       const formData = new FormData(form);
-
       const updatedProject = {
         name: formData.get("name"),
         description: formData.get("description"),
@@ -399,18 +394,6 @@ class DOMController {
 
     formContainer.appendChild(form);
     document.body.appendChild(formContainer);
-  }
-
-  renderCurrentProject() {
-    const currentProjectlabel = document.getElementById("current-project");
-    if (this.projectManager.currentProject) {
-      currentProjectlabel.textContent = `${this.projectManager.currentProject.name}`;
-      currentProjectlabel.style.visibility = "visible";
-      this.renderTodos(this.projectManager.currentProject.guid);
-    } else {
-      currentProjectlabel.textContent = "";
-      currentProjectlabel.style.visibility = "hidden";
-    }
   }
 }
 

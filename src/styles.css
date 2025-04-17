@@ -437,18 +437,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   position: absolute; /* Positioning for the line */
   height: 2px;
   background-color: #ffffffb4; /* Red color for the line */
-  width: 47%; /* Full width of the todo item */
-  transform: translate(-15%, -50%);
+  width: 45%; /* Full width of the todo item */
+  transform: translate(-13%, -50%);
   visibility: hidden; /* Hidden by default */
   z-index: 1; /* Ensure it appears above other elements */
 }
 
-.add-todo {
+#add-todo-container {
   display: flex;
   justify-content: flex-start;
   align-items: center;
   border-bottom: 1px solid #2c3e50; /* Line color for separation */
   gap: 10px;
+  visibility: hidden;
 }
 
 #add-todo-btn,
