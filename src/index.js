@@ -19,11 +19,17 @@ if (storedProjects) {
   projectManager.rehydrateProjects(storedProjects);
 }
 
-let domController = new DOMController(projectManager);
+const domController = new DOMController(projectManager);
 
-projectManager.setCurrentProject(projectManager.getProjects()[0]);
+if (projectManager.getProjects().length !== 0) {
+  // Set the current project to the first one in the list
+  const firstProject = projectManager.getProjects()[0];
+  projectManager.setCurrentProject(firstProject);
+  domController.setActiveProject(firstProject);
+  domController.setAddTodoContainerVisibility(true);
+}
 
-domController.renderCurrentProject();
+
 
 // Initialize the local storage manager
 

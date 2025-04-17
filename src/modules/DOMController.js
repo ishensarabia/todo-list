@@ -134,7 +134,6 @@ class DOMController {
     this.projectManager.setCurrentProject(project);
     this.renderCurrentProject();
     projectDiv.classList.add("active");
-    document.getElementById("add-todo-container").style.visibility = "visible";
   }
 
   handleProjectDeletion(project) {
@@ -182,9 +181,17 @@ class DOMController {
       ? "visible"
       : "hidden";
 
+    // Add event listener to open task preview
+    todoText.addEventListener("click", () => {
+      this.showTaskPreview(todo, (updatedTodo) => {
+        this.projectManager.updateTask(updatedTodo);
+        this.renderTodos(this.projectManager.currentProject.guid);
+      });
+    });
+
     const editButton = this.createButton(
       "✏️",
-      "Edit Todo",
+      "Edit Task",
       "edit-button",
       () => {
         this.showTodoForm(todo, (updatedTodo) => {
@@ -196,7 +203,7 @@ class DOMController {
     );
     const deleteButton = this.createButton(
       "🗑️",
-      "Delete Todo",
+      "Delete Task",
       "delete-button",
       () => {
         this.projectManager.removeTask(todo.title);
@@ -279,7 +286,7 @@ class DOMController {
 
   displayNoTodosMessage(todoList) {
     const noTodosMessage = document.createElement("li");
-    noTodosMessage.textContent = "No todos available for this project.";
+    noTodosMessage.textContent = "No tasks available for this project.";
     noTodosMessage.classList.add("no-todos-message");
     todoList.appendChild(noTodosMessage);
   }
@@ -289,6 +296,8 @@ class DOMController {
     if (this.projectManager.currentProject) {
       currentProjectLabel.textContent = this.projectManager.currentProject.name;
       currentProjectLabel.style.visibility = "visible";
+      document.getElementById("add-todo-container").style.visibility = "visible";
+
       this.renderTodos(this.projectManager.currentProject.guid);
     } else {
       currentProjectLabel.textContent = "";
@@ -401,6 +410,60 @@ class DOMController {
 
     formContainer.appendChild(form);
     document.body.appendChild(formContainer);
+  }
+
+  showTaskPreview(todo, onUpdate) {
+    const previewContainer = document.createElement("div");
+    previewContainer.classList.add("task-preview-container");
+
+    const previewContent = document.createElement("div");
+    previewContent.classList.add("task-preview-content");
+
+    // Task Title
+    const taskTitle = document.createElement("h2");
+    taskTitle.textContent = todo.title;
+
+    // Task Description
+    const taskDescription = document.createElement("p");
+    taskDescription.textContent =
+      todo.description || "No description provided.";
+
+    // Task Due Date
+    const taskDueDate = document.createElement("p");
+    taskDueDate.textContent = `Due Date: ${todo.dueDate || "No due date"}`;
+
+    // Task Priority
+    const taskPriority = document.createElement("p");
+    taskPriority.textContent = `Priority: ${todo.priority || "None"}`;
+
+    // Edit Button
+    const editButton = document.createElement("button");
+    editButton.textContent = "Edit Task";
+    editButton.addEventListener("click", () => {
+      this.showTodoForm(todo, (updatedTodo) => {
+        Object.assign(todo, updatedTodo);
+        onUpdate(todo);
+        document.body.removeChild(previewContainer);
+      });
+    });
+
+    // Close Button
+    const closeButton = document.createElement("button");
+    closeButton.textContent = "Close";
+    closeButton.classList.add("cancel-button");
+    closeButton.addEventListener("click", () => {
+      document.body.removeChild(previewContainer);
+    });
+
+    // Append Elements
+    previewContent.appendChild(taskTitle);
+    previewContent.appendChild(taskDescription);
+    previewContent.appendChild(taskDueDate);
+    previewContent.appendChild(taskPriority);
+    previewContent.appendChild(editButton);
+    previewContent.appendChild(closeButton);
+    previewContainer.appendChild(previewContent);
+    document.body.appendChild(previewContainer);
   }
 }
 
